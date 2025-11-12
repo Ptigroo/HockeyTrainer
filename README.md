@@ -11,6 +11,7 @@ Application d'analyse vidéo pour évaluer les performances des joueurs de hocke
 - **Calcul de vitesse** - Mesure la vitesse de la balle en km/h
 - **Analyse vidéo** (`ball_tracking_video.py`) - Analyse des vidéos existantes avec statistiques
 - **Détection de posture** (`posture_detection.py`) - Analyse la posture du joueur en temps réel avec MediaPipe
+- **Reconnaissance d'actions** (`action_recognition.py`) - Détecte et classifie les actions: tir, passe, dribble
 
 ### 🎯 Fonctionnalités futures
 - Détection des joueurs
@@ -108,6 +109,32 @@ python posture_detection.py
 - Visualisation des 33 landmarks corporels
 - Connexions squelettiques
 
+### 6. Reconnaissance d'actions (IA)
+```powershell
+python action_recognition.py
+```
+
+**Description:**
+- Combine la détection de balle et la détection de posture
+- Classifie automatiquement les actions de hockey en temps réel
+- Utilise des heuristiques basées sur la vitesse et la position
+
+**Actions détectées:**
+- `TIR` : Balle rapide (>50 km/h) qui s'éloigne du joueur
+- `PASSE` : Balle à vitesse moyenne (20-50 km/h) avec bras tendu
+- `DRIBBLE` : Balle proche du joueur (<150 pixels) avec mouvement
+
+**Touches disponibles:**
+- `q` : Quitter
+- `r` : Réinitialiser le reconnaisseur
+
+**Informations affichées:**
+- Action détectée avec code couleur (Rouge: TIR, Orange: PASSE, Vert: DRIBBLE)
+- Niveau de confiance de la détection
+- Vitesse de la balle en temps réel
+- Position du joueur et de la balle
+- Squelette corporel (MediaPipe)
+
 ## ⚙️ Configuration
 
 ### Calibration de la détection de couleur
@@ -201,23 +228,34 @@ Calibration utilisée: 100 pixels/mètre
 2. Réduisez `max_positions`
 3. Utilisez une vidéo avec FPS plus faible
 
+### Les actions ne sont pas détectées correctement
+1. Assurez-vous que la balle est bien détectée (orange/rouge)
+2. Vérifiez que le joueur est visible dans le cadre
+3. Ajustez les seuils dans `action_recognition.py`:
+   - `dribble_max_distance`: Distance max pour le dribble (défaut: 150 pixels)
+   - `pass_min_speed`: Vitesse minimum pour une passe (défaut: 20 km/h)
+   - `shoot_min_speed`: Vitesse minimum pour un tir (défaut: 50 km/h)
+4. Calibrez `pixels_per_meter` correctement pour des mesures précises
+
 ## 📝 Structure du projet
 
 ```
 HockeyTrainer/
 │
-├── motion_detection.py      # Détection de mouvement basique
-├── webcam_test.py           # Test de la webcam
-├── ball_tracking.py         # Détection de balle en temps réel
-├── ball_tracking_video.py   # Analyse de vidéos
-├── posture_detection.py     # Détection de posture avec IA (MediaPipe)
-├── test_detection.py        # Tests et création de vidéos démo
-└── README.md               # Ce fichier
+├── motion_detection.py         # Détection de mouvement basique
+├── webcam_test.py              # Test de la webcam
+├── ball_tracking.py            # Détection de balle en temps réel
+├── ball_tracking_video.py      # Analyse de vidéos
+├── posture_detection.py        # Détection de posture avec IA (MediaPipe)
+├── action_recognition.py       # Reconnaissance d'actions (tir, passe, dribble)
+├── test_detection.py           # Tests et création de vidéos démo
+├── test_action_recognition.py  # Tests pour la reconnaissance d'actions
+└── README.md                   # Ce fichier
 ```
 
 ## 🔮 Développements futurs
 
-- [ ] Reconnaissance d'actions (tir, passe, dribble)
+- [x] Reconnaissance d'actions (tir, passe, dribble)
 - [ ] Postures spécifiques hockey (préparation tir, etc.)
 - [ ] Fusionner détection posture avec motion_detection.py
 - [ ] Interface graphique (GUI)
