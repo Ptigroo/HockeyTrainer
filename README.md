@@ -217,7 +217,9 @@ HockeyTrainer/
 
 ## 🔮 Développements futurs
 
-- [ ] Détection multi-balles
+- [ ] Reconnaissance d'actions (tir, passe, dribble)
+- [ ] Postures spécifiques hockey (préparation tir, etc.)
+- [ ] Fusionner détection posture avec motion_detection.py
 - [ ] Interface graphique (GUI)
 - [ ] Export des données en CSV/JSON
 - [ ] Graphiques de vitesse
@@ -225,9 +227,6 @@ HockeyTrainer/
 - [x] Analyse de posture (implémenté avec MediaPipe)
 - [ ] Analyse de trajectoire avancée
 - [ ] Heatmaps de positions
-- [ ] Reconnaissance d'actions (tir, passe, dribble)
-- [ ] Postures spécifiques hockey (préparation tir, etc.)
-- [ ] Fusionner détection posture avec motion_detection.py
 
 ## 📄 Licence
 
