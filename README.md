@@ -10,10 +10,10 @@ Application d'analyse vidéo pour évaluer les performances des joueurs de hocke
 - **Détection de balle en temps réel** (`ball_tracking.py`) - Détecte et suit une balle de hockey orange/rouge
 - **Calcul de vitesse** - Mesure la vitesse de la balle en km/h
 - **Analyse vidéo** (`ball_tracking_video.py`) - Analyse des vidéos existantes avec statistiques
+- **Détection de posture** (`posture_detection.py`) - Analyse la posture du joueur en temps réel avec MediaPipe
 
 ### 🎯 Fonctionnalités futures
 - Détection des joueurs
-- Analyse de posture
 - Trajectoire de la crosse
 - Analyse tactique (positions, passes, etc.)
 
@@ -23,10 +23,11 @@ Application d'analyse vidéo pour évaluer les performances des joueurs de hocke
 - Python 3.7+
 - OpenCV
 - NumPy
+- MediaPipe
 
 ### Installation des dépendances
 ```powershell
-pip install opencv-python numpy
+pip install -r requirements.txt
 ```
 
 ## 📖 Utilisation
@@ -82,6 +83,30 @@ python ball_tracking_video.py
 - Vitesse moyenne
 - Nombre de détections
 - Barre de progression
+
+### 5. Détection de posture (IA)
+```powershell
+python posture_detection.py
+```
+
+**Description:**
+- Utilise MediaPipe Pose pour détecter 33 landmarks du corps
+- Calcule les angles (hanche, genou, inclinaison du tronc)
+- Classifie la posture en temps réel
+
+**Postures détectées:**
+- `DROIT` : Posture debout normale
+- `PENCHÉ EN AVANT` : Torso incliné > 25°
+- `ACCROUPI / BAS` : Genou fléchi < 140°
+
+**Touches disponibles:**
+- `q` : Quitter
+
+**Informations affichées:**
+- Classification de posture avec code couleur
+- Angles du genou, hanche et inclinaison
+- Visualisation des 33 landmarks corporels
+- Connexions squelettiques
 
 ## ⚙️ Configuration
 
@@ -185,6 +210,8 @@ HockeyTrainer/
 ├── webcam_test.py           # Test de la webcam
 ├── ball_tracking.py         # Détection de balle en temps réel
 ├── ball_tracking_video.py   # Analyse de vidéos
+├── posture_detection.py     # Détection de posture avec IA (MediaPipe)
+├── test_detection.py        # Tests et création de vidéos démo
 └── README.md               # Ce fichier
 ```
 
@@ -195,9 +222,12 @@ HockeyTrainer/
 - [ ] Export des données en CSV/JSON
 - [ ] Graphiques de vitesse
 - [ ] Détection des joueurs avec IA
+- [x] Analyse de posture (implémenté avec MediaPipe)
 - [ ] Analyse de trajectoire avancée
 - [ ] Heatmaps de positions
 - [ ] Reconnaissance d'actions (tir, passe, dribble)
+- [ ] Postures spécifiques hockey (préparation tir, etc.)
+- [ ] Fusionner détection posture avec motion_detection.py
 
 ## 📄 Licence
 
