@@ -8,6 +8,7 @@ import numpy as np
 import math
 from collections import deque
 import time
+from ball_tracking import BallTracker
 
 
 def calculate_distance(point1, point2):
@@ -65,14 +66,11 @@ class ActionRecognizer:
             model_complexity=1
         )
         
-        # Détection de balle - configuration HSV
-        self.lower_orange = np.array([5, 100, 100])
-        self.upper_orange = np.array([25, 255, 255])
+        # Utiliser le BallTracker amélioré avec détection de balle jaune
+        self.ball_tracker = BallTracker(max_positions=30)
         
-        # Historique pour l'analyse temporelle
-        self.ball_positions = deque(maxlen=30)
+        # Historique pour l'analyse temporelle (positions gérées par BallTracker)
         self.ball_speeds = deque(maxlen=10)
-        self.timestamps = deque(maxlen=30)
         
         # État de l'action actuelle
         self.current_action = "AUCUNE"
@@ -83,37 +81,17 @@ class ActionRecognizer:
         self.dribble_max_distance = 150  # pixels
         self.pass_min_speed = 20  # km/h
         self.shoot_min_speed = 50  # km/h
-        self.pixels_per_meter = 100
         
     def detect_ball(self, frame):
         """
-        Détecte la balle dans la frame
+        Détecte la balle dans la frame en utilisant le BallTracker amélioré
         
         Returns:
             (x, y, radius) ou None si non trouvée
         """
-        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv, self.lower_orange, self.upper_orange)
-        
-        # Nettoyer le masque
-        kernel = np.ones((5, 5), np.uint8)
-        mask = cv2.erode(mask, kernel, iterations=2)
-        mask = cv2.dilate(mask, kernel, iterations=2)
-        mask = cv2.GaussianBlur(mask, (5, 5), 0)
-        
-        # Trouver les contours
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        if len(contours) > 0:
-            largest_contour = max(contours, key=cv2.contourArea)
-            
-            if cv2.contourArea(largest_contour) > 50:
-                ((x, y), radius) = cv2.minEnclosingCircle(largest_contour)
-                
-                if radius > 5 and radius < 100:
-                    return (int(x), int(y), int(radius))
-        
-        return None
+        # Utiliser le BallTracker avec détection optimisée pour balle jaune
+        position, mask = self.ball_tracker.update(frame)
+        return position
     
     def get_player_center(self, landmarks, image_w, image_h):
         """
@@ -140,35 +118,13 @@ class ActionRecognizer:
     
     def calculate_ball_speed(self):
         """
-        Calcule la vitesse de la balle en km/h
+        Calcule la vitesse de la balle en km/h en utilisant le BallTracker
         
         Returns:
             Vitesse en km/h
         """
-        if len(self.ball_positions) < 2 or len(self.timestamps) < 2:
-            return 0.0
-        
-        # Utiliser les 5 dernières positions
-        num_points = min(5, len(self.ball_positions))
-        if num_points < 2:
-            return 0.0
-        
-        total_distance_pixels = 0
-        for i in range(-num_points + 1, 0):
-            x1, y1 = self.ball_positions[i-1]
-            x2, y2 = self.ball_positions[i]
-            distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-            total_distance_pixels += distance
-        
-        time_elapsed = self.timestamps[-1] - self.timestamps[-num_points]
-        
-        if time_elapsed > 0:
-            distance_meters = total_distance_pixels / self.pixels_per_meter
-            speed_ms = distance_meters / time_elapsed
-            speed_kmh = speed_ms * 3.6
-            return speed_kmh
-        
-        return 0.0
+        # Utiliser la vitesse calculée par le BallTracker
+        return self.ball_tracker.speed_kmh
     
     def get_arm_extension(self, landmarks):
         """
@@ -212,9 +168,9 @@ class ActionRecognizer:
         # TIR: Balle s'éloigne rapidement du joueur avec bras tendu
         if ball_speed > self.shoot_min_speed:
             # Vérifier si la balle s'éloigne (comparer avec position précédente)
-            if len(self.ball_positions) >= 2:
+            if len(self.ball_tracker.positions) >= 2:
                 prev_distance = calculate_distance(
-                    (self.ball_positions[-2][0], self.ball_positions[-2][1]),
+                    (self.ball_tracker.positions[-2][0], self.ball_tracker.positions[-2][1]),
                     player_pos
                 )
                 if distance > prev_distance:
@@ -232,11 +188,11 @@ class ActionRecognizer:
         if distance < self.dribble_max_distance:
             if ball_speed > 5:  # Minimum de mouvement
                 # Vérifier que la balle reste proche
-                if len(self.ball_positions) >= 5:
+                if len(self.ball_tracker.positions) >= 5:
                     recent_distances = []
                     for i in range(-5, 0):
                         dist = calculate_distance(
-                            (self.ball_positions[i][0], self.ball_positions[i][1]),
+                            (self.ball_tracker.positions[i][0], self.ball_tracker.positions[i][1]),
                             player_pos
                         )
                         recent_distances.append(dist)
@@ -295,7 +251,7 @@ class ActionRecognizer:
             if dy != 0:
                 body_lean = abs(math.degrees(math.atan(dx / dy)))
         
-        # 2. Détecter la balle
+        # 2. Détecter la balle avec le BallTracker amélioré
         ball_result = self.detect_ball(frame)
         ball_pos = None
         
@@ -303,11 +259,8 @@ class ActionRecognizer:
             x, y, radius = ball_result
             ball_pos = (x, y)
             
-            # Enregistrer la position et le temps
-            self.ball_positions.append((x, y))
-            self.timestamps.append(current_time)
-            
-            # Dessiner la balle
+            # Dessiner la balle avec la trajectoire
+            self.ball_tracker.draw_trajectory(annotated_frame)
             cv2.circle(annotated_frame, (x, y), radius, (0, 255, 0), 2)
             cv2.circle(annotated_frame, (x, y), 5, (0, 0, 255), -1)
         
@@ -387,9 +340,8 @@ class ActionRecognizer:
         """
         Réinitialise l'état du reconnaisseur
         """
-        self.ball_positions.clear()
+        self.ball_tracker = BallTracker(max_positions=30)
         self.ball_speeds.clear()
-        self.timestamps.clear()
         self.current_action = "AUCUNE"
         self.action_confidence = 0.0
         self.action_start_time = None
@@ -408,7 +360,12 @@ def main():
     print("🏒 Reconnaissance d'Actions - Hockey Trainer")
     print("=" * 60)
     print("Détection: TIR, PASSE, DRIBBLE")
-    print("Appuyez sur 'q' pour quitter, 'r' pour réinitialiser")
+    print("Touches:")
+    print("  - 'q': Quitter")
+    print("  - 'r': Réinitialiser")
+    print("  - 's/x': Ajuster Saturation balle (si mauvaise détection)")
+    print("  - 'd/c': Ajuster Luminosité balle")
+    print("  - 'h': Afficher les paramètres de détection")
     print("=" * 60)
     
     cap = cv2.VideoCapture(0)
@@ -418,6 +375,7 @@ def main():
         return
     
     recognizer = ActionRecognizer()
+    show_ball_params = False
     
     try:
         while cap.isOpened():
@@ -433,6 +391,19 @@ def main():
             # Dessiner les informations
             recognizer.draw_info(annotated_frame, action, confidence)
             
+            # Afficher les paramètres de détection de balle si demandé
+            if show_ball_params:
+                y_offset = 160
+                params = [
+                    f"Balle Hue: {recognizer.ball_tracker.hue_min}-{recognizer.ball_tracker.hue_max}",
+                    f"Balle Sat: {recognizer.ball_tracker.sat_min}+ (s/x)",
+                    f"Balle Val: {recognizer.ball_tracker.val_min}+ (d/c)",
+                    f"Contours: {recognizer.ball_tracker.num_contours}",
+                ]
+                for i, text in enumerate(params):
+                    cv2.putText(annotated_frame, text, (10, y_offset + i*25),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 1)
+            
             # Afficher
             cv2.imshow('Reconnaissance d\'Actions - Hockey Trainer', annotated_frame)
             
@@ -443,6 +414,23 @@ def main():
             elif key == ord('r'):
                 recognizer.reset()
                 print("🔄 Reconnaisseur réinitialisé")
+            elif key == ord('h'):
+                show_ball_params = not show_ball_params
+                print(f"📋 Paramètres balle: {'Affichés' if show_ball_params else 'Masqués'}")
+            # Ajustements de la saturation pour la détection de balle
+            elif key == ord('s'):
+                recognizer.ball_tracker.sat_min = max(0, recognizer.ball_tracker.sat_min - 10)
+                print(f"💧 Saturation balle: {recognizer.ball_tracker.sat_min}")
+            elif key == ord('x'):
+                recognizer.ball_tracker.sat_min = min(255, recognizer.ball_tracker.sat_min + 10)
+                print(f"💧 Saturation balle: {recognizer.ball_tracker.sat_min}")
+            # Ajustements de la luminosité pour la détection de balle
+            elif key == ord('d'):
+                recognizer.ball_tracker.val_min = max(0, recognizer.ball_tracker.val_min - 10)
+                print(f"💡 Luminosité balle: {recognizer.ball_tracker.val_min}")
+            elif key == ord('c'):
+                recognizer.ball_tracker.val_min = min(255, recognizer.ball_tracker.val_min + 10)
+                print(f"💡 Luminosité balle: {recognizer.ball_tracker.val_min}")
         
     finally:
         cap.release()

@@ -60,18 +60,22 @@ def show_menu():
     print("   → Détecte les zones de mouvement dans la vidéo")
     print()
     print("3. 🎯 Détection de balle (Temps réel)")
-    print("   → Détecte et suit une balle orange/rouge via webcam")
+    print("   → Détecte et suit une balle jaune via webcam")
     print("   → Calcule la vitesse en km/h")
     print()
-    print("4. 📊 Analyse de vidéo")
+    print("4. 🏒 Reconnaissance d'actions (NOUVEAU!)")
+    print("   → Détecte TIR, PASSE, DRIBBLE avec tracking de balle")
+    print("   → Combine détection de posture et suivi de balle")
+    print()
+    print("5. 📊 Analyse de vidéo")
     print("   → Analyse une vidéo existante")
     print("   → Génère un rapport avec statistiques")
     print()
-    print("5. 🧪 Tests et démonstration")
+    print("6. 🧪 Tests et démonstration")
     print("   → Créer une vidéo de test")
     print("   → Tester la détection")
     print()
-    print("6. 📖 Aide et documentation")
+    print("7. 📖 Aide et documentation")
     print()
     print("0. ❌ Quitter")
     print()
@@ -95,6 +99,10 @@ def run_module(module_name):
             import ball_tracking
             ball_tracking.main()
         
+        elif module_name == "action_recognition":
+            import action_recognition
+            action_recognition.main()
+        
         elif module_name == "ball_tracking_video":
             import ball_tracking_video
             ball_tracking_video.main()
@@ -117,8 +125,14 @@ def show_help():
     print("="*60)
     print()
     print("🎯 DÉTECTION DE BALLE:")
-    print("   La détection fonctionne avec des balles ORANGE ou ROUGE.")
+    print("   La détection fonctionne avec des balles JAUNE VIVE.")
+    print("   Optimisée pour éliminer les reflets sur murs et parquet.")
     print("   Assurez-vous d'avoir un bon éclairage.")
+    print()
+    print("🏒 RECONNAISSANCE D'ACTIONS:")
+    print("   Combine détection de posture (MediaPipe) et tracking de balle.")
+    print("   Détecte automatiquement: TIR, PASSE, DRIBBLE")
+    print("   Ajustez la détection de balle avec s/x et d/c en temps réel.")
     print()
     print("⚙️  CALIBRATION:")
     print("   La vitesse dépend de la calibration 'pixels_per_meter'.")
@@ -164,14 +178,18 @@ def main():
             run_module("ball_tracking")
         
         elif choice == "4":
+            print("\n🚀 Lancement de la reconnaissance d'actions...")
+            run_module("action_recognition")
+        
+        elif choice == "5":
             print("\n🚀 Lancement de l'analyse vidéo...")
             run_module("ball_tracking_video")
         
-        elif choice == "5":
+        elif choice == "6":
             print("\n🚀 Lancement des tests...")
             run_module("test_detection")
         
-        elif choice == "6":
+        elif choice == "7":
             show_help()
         
         elif choice == "0":
@@ -180,7 +198,7 @@ def main():
             break
         
         else:
-            print("\n❌ Choix invalide. Veuillez choisir un numéro entre 0 et 6.")
+            print("\n❌ Choix invalide. Veuillez choisir un numéro entre 0 et 7.")
             input("Appuyez sur ENTRÉE pour continuer...")
 
 
