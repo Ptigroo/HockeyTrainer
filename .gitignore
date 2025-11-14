@@ -61,3 +61,11 @@ speed_analysis.png
 # Temporary files
 *.tmp
 *.temp
+
+# .NET
+[Bb]in/
+[Oo]bj/
+*.dll
+*.pdb
+*.exe
+
