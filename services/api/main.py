@@ -56,19 +56,21 @@ async def infer_video(file: UploadFile = File(...)):
     Returns:
         JSON with inference results
     """
+    temp_path = None
     try:
-        # Validate file type
-        if not file.content_type or not file.content_type.startswith('video/'):
-            logger.warning(f"Invalid content type: {file.content_type}")
-            # Allow anyway for testing purposes
-            logger.info("Proceeding with analysis despite content type")
+        # Read file content first
+        content = await file.read()
+        file_size_mb = len(content) / 1024.0 / 1024.0
         
         # Log upload
-        logger.info(f"Received video: {file.filename}, size: {file.size if hasattr(file, 'size') else 'unknown'}")
+        logger.info(f"Received video: {file.filename}, size: {file_size_mb:.2f} MB")
+        
+        # Validate file type (relaxed for starter version)
+        if file.content_type and not file.content_type.startswith('video/'):
+            logger.warning(f"Content type '{file.content_type}' is not a video type. Proceeding anyway for starter version.")
         
         # Save to temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix='.mp4') as temp_file:
-            content = await file.read()
             temp_file.write(content)
             temp_path = temp_file.name
             logger.info(f"Saved to temporary file: {temp_path}")
@@ -115,12 +117,18 @@ async def infer_video(file: UploadFile = File(...)):
             
         finally:
             # Clean up temporary file
-            if os.path.exists(temp_path):
+            if temp_path and os.path.exists(temp_path):
                 os.remove(temp_path)
                 logger.info(f"Cleaned up temporary file: {temp_path}")
     
     except Exception as e:
         logger.error(f"Error processing video: {str(e)}", exc_info=True)
+        # Clean up if temp file was created
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except Exception as cleanup_error:
+                logger.error(f"Error cleaning up temp file: {str(cleanup_error)}")
         raise HTTPException(
             status_code=500,
             detail=f"Error processing video: {str(e)}"

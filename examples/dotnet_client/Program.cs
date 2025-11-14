@@ -82,8 +82,20 @@ namespace HockeyTrainerClient
                 using var fileStream = File.OpenRead(videoPath);
                 using var streamContent = new StreamContent(fileStream);
                 
-                // Set content type
-                streamContent.Headers.ContentType = new MediaTypeHeaderValue("video/mp4");
+                // Set content type based on file extension
+                var extension = Path.GetExtension(videoPath).ToLowerInvariant();
+                var contentType = extension switch
+                {
+                    ".mp4" => "video/mp4",
+                    ".avi" => "video/x-msvideo",
+                    ".mov" => "video/quicktime",
+                    ".wmv" => "video/x-ms-wmv",
+                    ".flv" => "video/x-flv",
+                    ".mkv" => "video/x-matroska",
+                    ".webm" => "video/webm",
+                    _ => "video/mp4" // Default fallback
+                };
+                streamContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
                 
                 // Add file to form
                 form.Add(streamContent, "file", Path.GetFileName(videoPath));
