@@ -46,7 +46,7 @@ namespace HockeyTrainerClient
 
             // Prompt user for path
             Console.Write("Enter video file path (or drag and drop file here): ");
-            string input = Console.ReadLine()?.Trim();
+            string? input = Console.ReadLine()?.Trim();
             
             // Remove quotes if present (from drag and drop)
             if (!string.IsNullOrEmpty(input))

@@ -4,7 +4,7 @@ A simple .NET console application that uploads video files to the Hockey Trainer
 
 ## Prerequisites
 
-- .NET 6.0 SDK or later
+- .NET 8.0 SDK or later
 - Hockey Trainer API service running (see `services/api/`)
 
 ## Quick Start
@@ -122,7 +122,7 @@ dotnet publish -c Release -r osx-x64 --self-contained
 dotnet publish -c Release -r linux-x64 --self-contained
 ```
 
-The executable will be in `bin/Release/net6.0/{runtime}/publish/`
+The executable will be in `bin/Release/net8.0/{runtime}/publish/`
 
 ## Troubleshooting
 
